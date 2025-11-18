@@ -1,0 +1,11 @@
+pycache/
+*.pyc
+*.pyo
+
+venv/
+.idea/
+
+*.log
+local_settings.py
+db.sqlite3
+/media
