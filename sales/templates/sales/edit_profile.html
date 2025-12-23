@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование профиля — BookVibe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full bg-white rounded-[3rem] shadow-2xl p-10 border border-slate-100">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-black text-slate-800">Ваши данные</h1>
+            <p class="text-slate-400 mt-2 font-medium">Обновите информацию о себе</p>
+        </div>
+
+        <form method="POST" class="space-y-5">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2 ml-4">Имя</label>
+                <input type="text" name="first_name" value="{{ customer.first_name }}" class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white outline-none transition-all font-semibold">
+            </div>
+            <div>
+                <label class="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2 ml-4">Фамилия</label>
+                <input type="text" name="last_name" value="{{ customer.last_name }}" class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white outline-none transition-all font-semibold">
+            </div>
+            <div>
+                <label class="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2 ml-4">Телефон</label>
+                <input type="text" name="phone" value="{{ customer.phone }}" class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white outline-none transition-all font-semibold">
+            </div>
+
+            <div class="pt-4 flex gap-3">
+                <a href="{% url 'sales:profile' %}" class="flex-1 text-center py-4 bg-slate-100 text-slate-500 rounded-2xl font-bold hover:bg-slate-200 transition-all">Отмена</a>
+                <button type="submit" class="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95">
+                    Сохранить
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

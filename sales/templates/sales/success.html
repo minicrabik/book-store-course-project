@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заказ оформлен — BookVibe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .success-animate { animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-2xl w-full bg-white rounded-[3rem] shadow-2xl p-8 md:p-16 text-center border border-slate-100 success-animate">
+        <!-- Иконка успеха -->
+        <div class="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-50">
+            <i class="fas fa-truck-fast text-4xl"></i>
+        </div>
+
+        <h1 class="text-4xl font-black text-slate-900 mb-4 tracking-tight">Заказ в пути!</h1>
+        
+        <div class="bg-indigo-50 rounded-3xl p-6 mb-8 border border-indigo-100">
+            <p class="text-indigo-900 font-bold text-lg">
+                Ждет вас по адресу:<br>
+                <span class="text-indigo-600">г. Москва, ул. Книжная, д. 42, оф. 10</span>
+            </p>
+        </div>
+
+        <div class="space-y-4 text-slate-500 font-medium mb-10">
+            <p>Номер вашего заказа: <span class="text-slate-900 font-bold">#{{ sale.id }}</span></p>
+            <p>Сумма к оплате при получении: <span class="text-slate-900 font-bold">{{ sale.total_amount }} ₽</span></p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a href="{% url 'sales:profile' %}" class="py-4 px-6 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95">
+                В личный кабинет
+            </a>
+            <a href="{% url 'catalog:book_list' %}" class="py-4 px-6 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95">
+                Продолжить покупки
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

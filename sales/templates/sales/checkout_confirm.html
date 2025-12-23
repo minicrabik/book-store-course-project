@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подтверждение данных — BookVibe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen py-12 px-6">
+
+    <div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8">
+        
+        <!-- Левая часть: Форма данных -->
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 p-8 md:p-12 border border-slate-100">
+                <div class="mb-10">
+                    <h1 class="text-3xl font-black text-slate-900 tracking-tight">Проверка данных</h1>
+                    <p class="text-slate-400 mt-2 font-medium">Пожалуйста, убедитесь, что контактная информация верна.</p>
+                </div>
+
+                <form method="POST" class="space-y-6">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2 ml-4">Имя</label>
+                            <input type="text" name="first_name" value="{{ customer.first_name }}" required
+                                class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white outline-none transition-all font-semibold text-slate-700">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2 ml-4">Фамилия</label>
+                            <input type="text" name="last_name" value="{{ customer.last_name }}" required
+                                class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white outline-none transition-all font-semibold text-slate-700">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-black uppercase text-slate-400 tracking-widest mb-2 ml-4">Телефон для связи</label>
+                        <input type="text" name="phone" value="{{ customer.phone }}" required
+                            class="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white outline-none transition-all font-semibold text-slate-700">
+                    </div>
+
+                    <div class="bg-amber-50 rounded-2xl p-6 border border-amber-100 flex gap-4 items-start">
+                        <div class="text-amber-500 mt-1"><i class="fas fa-info-circle text-xl"></i></div>
+                        <div class="text-sm text-amber-800 font-medium leading-relaxed">
+                            Нажимая кнопку "Подтвердить заказ", вы соглашаетесь с тем, что заказ будет доставлен в пункт выдачи: 
+                            <span class="font-bold underline">г. Москва, ул. Книжная, д. 42, оф. 10.</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 flex flex-col sm:flex-row gap-4">
+                        <button type="submit" class="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-95 uppercase tracking-wider">
+                            Подтвердить заказ
+                        </button>
+                        <a href="{% url 'sales:cart_detail' %}" class="flex-1 py-5 bg-slate-100 text-slate-500 rounded-2xl font-bold text-center hover:bg-slate-200 transition-all">
+                            Назад в корзину
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Правая часть: Сводка корзины -->
+        <div class="lg:col-span-2">
+            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white sticky top-12">
+                <h3 class="text-xl font-bold mb-6">Ваш заказ</h3>
+                
+                <div class="space-y-4 mb-8 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {% for item in cart %}
+                    <div class="flex justify-between items-start gap-4 text-sm">
+                        <span class="text-slate-400">{{ item.book.title }} <span class="text-slate-600">×{{ item.quantity }}</span></span>
+                        <span class="font-bold whitespace-nowrap">{{ item.total_price }} ₽</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="border-t border-slate-800 pt-6 space-y-3">
+                    <div class="flex justify-between text-slate-400">
+                        <span>Доставка</span>
+                        <span class="text-emerald-400 font-bold uppercase text-xs">Бесплатно</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                        <span class="text-lg font-medium text-slate-300">Итого:</span>
+                        <span class="text-3xl font-black text-white">{{ cart.get_total_price }} ₽</span>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-4 bg-slate-800/50 rounded-2xl border border-slate-700 text-[11px] text-slate-400 leading-relaxed italic">
+                    Оплата производится наличными или картой при получении заказа в пункте выдачи.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+
+</body>
+</html>

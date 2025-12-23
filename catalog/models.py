@@ -1,106 +1,105 @@
 from django.db import models
 
-# Базовые сущности Справочники
-
-# Издательства. Связь 1:M с Книгами и Поступлениями.
-class Publisher(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название издательства")
-
-    class Meta:
-        verbose_name = "Издательство"
-        verbose_name_plural = "Издательства"
+class Author(models.Model):
+    """Модель автора книги"""
+    first_name = models.CharField(max_length=100, verbose_name="Имя")
+    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
+    middle_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Отчество")
+    birth_date = models.DateField(blank=True, null=True, verbose_name="Дата рождения")
 
     def __str__(self):
-        return self.name
-
-# Авторы. Связь M:N с Книгами.
-class Author(models.Model):
-    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
-    first_name = models.CharField(max_length=100, verbose_name="Имя")
-    patronymic = models.CharField(max_length=100, blank=True, null=True, verbose_name="Отчество")
-    date_of_birth = models.DateField(verbose_name="Дата рождения")
+        return f"{self.last_name} {self.first_name}"
 
     class Meta:
         verbose_name = "Автор"
         verbose_name_plural = "Авторы"
 
-    def __str__(self):
-        return f'{self.last_name} {self.first_name}'
-
-# Жанры. Связь M:N с Книгами.
 class Genre(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название жанра")
+    """Жанры литературы"""
+    name = models.CharField(max_length=100, verbose_name="Название жанра")
+
+    def __str__(self):
+        return self.name
 
     class Meta:
         verbose_name = "Жанр"
         verbose_name_plural = "Жанры"
 
+class Section(models.Model):
+    """Разделы магазина (например, Детская литература, Наука)"""
+    name = models.CharField(max_length=100, verbose_name="Название раздела")
+
     def __str__(self):
         return self.name
-
-
-# Разделы магазина. Связь M:N с Книгами.
-class Section(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название раздела")
 
     class Meta:
         verbose_name = "Раздел"
         verbose_name_plural = "Разделы"
 
+class Publisher(models.Model):
+    """Издательства"""
+    name = models.CharField(max_length=255, verbose_name="Название издательства")
+
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = "Издательство"
+        verbose_name_plural = "Издательства"
 
-# Основная сущность
-
-# Книги. Центральная сущность каталога.
 class Book(models.Model):
+    """Основная модель книги"""
     title = models.CharField(max_length=255, verbose_name="Название книги")
-    description = models.TextField(blank=True, verbose_name="Описание")
-    publication_year = models.IntegerField(verbose_name="Год издания")
+    description = models.TextField(blank=True, null=True, verbose_name="Описание")
+    publish_year = models.IntegerField(verbose_name="Год издания")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена продажи")
+    stock = models.PositiveIntegerField(default=0, verbose_name="Остаток на складе (шт)")
     
-    # 1:M связь с Издательством
-    publisher = models.ForeignKey(
-        Publisher, 
-        on_delete=models.SET_NULL, # Если издательство удалено, поле обнулится, но книга останется
-        null=True, 
-        verbose_name="Издательство"
-    )
-    
-    # M:N связи через ManyToManyField
-    authors = models.ManyToManyField(Author, through='BookAuthor', verbose_name="Авторы")
-    genres = models.ManyToManyField(Genre, through='BookGenre', verbose_name="Жанры")
-    sections = models.ManyToManyField(Section, through='BookSection', verbose_name="Разделы")
+    # Внешние ключи
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE, verbose_name="Издательство")
+    genre = models.ForeignKey(Genre, on_delete=models.SET_NULL, null=True, verbose_name="Жанр")
+    section = models.ForeignKey(Section, on_delete=models.SET_NULL, null=True, verbose_name="Раздел")
+
+    def __str__(self):
+        return f"{self.title} — {self.stock} шт."
 
     class Meta:
         verbose_name = "Книга"
         verbose_name_plural = "Книги"
 
-    def __str__(self):
-        return self.title
-
-# Промежуточные M:N таблицы 
-
-# Связующая таблица для Книга <-> Автор
 class BookAuthor(models.Model):
-    book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    author = models.ForeignKey(Author, on_delete=models.CASCADE)
+    """Связующая таблица для реализации связи Многие-ко-Многим между книгами и авторами"""
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, verbose_name="Книга")
+    author = models.ForeignKey(Author, on_delete=models.CASCADE, verbose_name="Автор")
 
     class Meta:
-        unique_together = ('book', 'author') # Книга-Автор - это составной PK из схемы
+        verbose_name = "Автор книги"
+        verbose_name_plural = "Авторы книг"
+        unique_together = ('book', 'author')
 
-# Связующая таблица для Книга <-> Жанр.
-class BookGenre(models.Model):
-    book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+class Supplier(models.Model):
+    """Поставщики книг"""
+    name = models.CharField(max_length=255, verbose_name="Наименование поставщика")
+    phone = models.CharField(max_length=20, verbose_name="Телефон")
 
-    class Meta:
-        unique_together = ('book', 'genre')
-
-# Связующая таблица для Книга <-> Раздел.
-class BookSection(models.Model):
-    book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.name
 
     class Meta:
-        unique_together = ('book', 'section')
+        verbose_name = "Поставщик"
+        verbose_name_plural = "Поставщики"
+
+class Supply(models.Model):
+    """Журнал поступлений книг на склад"""
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name="Поставщик")
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, verbose_name="Книга")
+    quantity = models.PositiveIntegerField(verbose_name="Количество")
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена закупки")
+    supply_date = models.DateField(auto_now_add=True, verbose_name="Дата поступления")
+
+    def __str__(self):
+        return f"Поставка №{self.id} ({self.book.title})"
+
+    class Meta:
+        verbose_name = "Поступление"
+        verbose_name_plural = "Поступления"

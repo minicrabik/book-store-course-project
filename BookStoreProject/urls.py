@@ -18,10 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+    # Стандартная админка
     path('admin/', admin.site.urls),
-]
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('catalog.urls')), # Это подключит главную страницу
+    
+    # Подключаем каталог (главная страница и книги)
+    path('', include('catalog.urls')),
+    
+    # Подключаем продажи (логин, регистрация, профиль, корзина)
+    # Оставляем только одну строку для sales!
+    path('', include('sales.urls')), 
 ]

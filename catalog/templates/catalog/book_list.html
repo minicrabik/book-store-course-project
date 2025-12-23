@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог книг — BookVibe</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+        .bg-pattern {
+            background-image: radial-gradient(#4f46e5 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
+            opacity: 0.05;
+        }
+        
+        .book-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .book-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-indigo {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 240px 1fr auto;
+            align-items: center;
+            height: 80px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+    <div class="fixed inset-0 bg-pattern pointer-events-none z-0"></div>
+
+    <!-- Навигация -->
+    <nav class="glass-nav border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="nav-grid">
+                <!-- Слева: Логотип -->
+                <a href="{% url 'catalog:index' %}" class="flex items-center gap-2 group">
+                    <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-lg shadow-indigo-100 transition-transform group-hover:scale-105">
+                        <i class="fas fa-book-journal-whills text-xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold tracking-tight text-slate-800 whitespace-nowrap">Book<span class="text-indigo-600">Vibe</span></span>
+                </a>
+                
+                <!-- Центр: Меню -->
+                <div class="hidden md:flex justify-center items-center space-x-12">
+                    <a href="{% url 'catalog:index' %}" class="text-slate-500 hover:text-indigo-600 transition-colors font-semibold text-sm uppercase tracking-widest">Главная</a>
+                    <a href="{% url 'catalog:book_list' %}" class="text-indigo-600 font-bold text-sm uppercase tracking-widest border-b-2 border-indigo-600 py-1">Каталог</a>
+                </div>
+
+                <!-- Справа: Вход и Регистрация -->
+                <div class="flex items-center gap-4">
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center gap-4">
+                            <a href="{% url 'sales:profile' %}" class="flex items-center gap-2 text-slate-700 font-bold hover:text-indigo-600 transition-all">
+                                <div class="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 shadow-sm">
+                                    <i class="fas fa-user-circle text-lg"></i>
+                                </div>
+                                <span class="hidden md:inline">{{ user.username }}</span>
+                            </a>
+                            <a href="{% url 'sales:logout' %}" class="text-slate-400 hover:text-red-500 p-2 transition-colors" title="Выйти">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <button onclick="toggleModal()" class="text-slate-600 font-semibold hover:text-indigo-600 px-4 py-2 transition-colors focus:outline-none">
+                            Вход
+                        </button>
+                        <a href="{% url 'sales:signup' %}" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all active:scale-95 whitespace-nowrap">
+                            Регистрация
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 py-16">
+        <div class="max-w-3xl mb-16">
+            <h1 class="text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Каталог книг</h1>
+            <p class="text-slate-500 text-lg mb-8">Исследуйте нашу коллекцию и найдите свое следующее вдохновение.</p>
+            
+            <form method="GET" action="{% url 'catalog:book_list' %}" class="relative group">
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Поиск по названию или автору..." 
+                    class="w-full pl-14 pr-6 py-5 rounded-[2rem] border-2 border-slate-100 bg-white text-lg focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 transition-all shadow-xl shadow-slate-200/50">
+                <div class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors">
+                    <i class="fas fa-search text-xl"></i>
+                </div>
+                <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 bg-indigo-600 text-white px-6 py-2.5 rounded-full font-bold hover:bg-indigo-700 transition-colors hidden sm:block">
+                    Найти
+                </button>
+            </form>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+            {% for book in books %}
+            <a href="{% url 'catalog:book_detail' book.pk %}" class="book-card bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-slate-100 flex flex-col group">
+                <div class="aspect-[3/4] gradient-indigo flex items-center justify-center p-8 relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                    <i class="fas fa-book-open text-white/10 text-8xl absolute group-hover:scale-110 transition-transform"></i>
+                    <span class="text-white font-bold text-center text-xl relative z-10 uppercase tracking-tight leading-tight px-4 drop-shadow-md">
+                        {{ book.title }}
+                    </span>
+                </div>
+                
+                <div class="p-7 flex flex-col flex-grow">
+                    <h3 class="font-bold text-slate-800 text-lg line-clamp-2 group-hover:text-indigo-600 transition-colors mb-4">
+                        {{ book.title }}
+                    </h3>
+                    <div class="mt-auto flex items-center justify-between pt-5 border-t border-slate-50">
+                        <span class="text-2xl font-black text-indigo-600">{{ book.price }} ₽</span>
+                        <div class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="col-span-full py-24 text-center">
+                <div class="inline-flex items-center justify-center w-24 h-24 bg-slate-100 rounded-full text-slate-300 mb-6">
+                    <i class="fas fa-search text-4xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800">Мы ничего не нашли</h3>
+                <p class="text-slate-500 mt-2">Попробуйте изменить поисковый запрос.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-100 py-12 relative z-10 mt-20">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <span class="text-slate-400 text-sm italic tracking-wide">&copy; 2024 BookVibe Store. С любовью к книгам.</span>
+        </div>
+    </footer>
+
+    <!-- Модальное окно -->
+    <div id="loginModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleModal()"></div>
+        <div class="bg-white rounded-[3rem] shadow-2xl relative z-10 w-full max-w-md p-12 transform transition-all">
+            <button onclick="toggleModal()" class="absolute top-6 right-8 text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h2 class="text-3xl font-black text-slate-800 mb-10 text-center tracking-tight">Авторизация</h2>
+            <div class="space-y-5">
+                <a href="{% url 'sales:login' %}" class="flex items-center gap-6 p-7 rounded-[2rem] border-2 border-slate-50 hover:border-indigo-500 hover:bg-indigo-50 transition-all group">
+                    <div class="bg-indigo-100 text-indigo-600 p-4 rounded-2xl group-hover:scale-110 transition-transform"><i class="fas fa-user text-2xl"></i></div>
+                    <span class="font-bold text-lg text-slate-800">Покупатель</span>
+                </a>
+                <a href="/admin/" class="flex items-center gap-6 p-7 rounded-[2rem] border-2 border-slate-50 hover:border-rose-500 hover:bg-rose-50 transition-all group">
+                    <div class="bg-rose-100 text-rose-600 p-4 rounded-2xl group-hover:scale-110 transition-transform"><i class="fas fa-user-shield text-2xl"></i></div>
+                    <span class="font-bold text-lg text-slate-800">Администратор</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

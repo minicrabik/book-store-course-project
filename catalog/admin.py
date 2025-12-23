@@ -1,28 +1,30 @@
 from django.contrib import admin
-from .models import Author, Genre, Publisher, Section, Book, BookAuthor, BookGenre, BookSection
+from .models import Author, Genre, Section, Publisher, Book, BookAuthor, Supplier, Supply
 
-@admin.register(Author)
-class AuthorAdmin(admin.ModelAdmin):
-    list_display = ('last_name', 'first_name')
-    search_fields = ('last_name',)
+# Создаем "вкладку" для авторов внутри страницы книги
+class BookAuthorInline(admin.TabularInline):
+    model = BookAuthor
+    extra = 1 # Количество пустых полей для новых авторов
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    list_display = ('title', 'publisher') 
+    list_display = ('title', 'get_authors', 'price', 'stock', 'publisher')
     search_fields = ('title',)
+    # Добавляем выбор авторов прямо в карточку книги
+    inlines = [BookAuthorInline]
 
-@admin.register(Publisher)
-class PublisherAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+    # Метод для отображения списка авторов в общей таблице
+    def get_authors(self, obj):
+        return ", ".join([f"{ba.author.last_name} {ba.author.first_name}" for ba in obj.bookauthor_set.all()])
+    get_authors.short_description = 'Авторы'
 
-@admin.register(Genre)
-class GenreAdmin(admin.ModelAdmin):
-    list_display = ('name',)
+@admin.register(Author)
+class AuthorAdmin(admin.ModelAdmin):
+    list_display = ('last_name', 'first_name', 'middle_name', 'birth_date')
 
-@admin.register(Section)
-class SectionAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-
-admin.site.register(BookAuthor)
-admin.site.register(BookGenre)
-admin.site.register(BookSection)
+# Регистрируем остальные модели, чтобы они были в админке
+admin.site.register(Genre)
+admin.site.register(Section)
+admin.site.register(Publisher)
+admin.site.register(Supplier)
+admin.site.register(Supply)

@@ -1,119 +1,123 @@
-from django.db import models 
-from catalog.models import Book, Publisher 
+from django.db import models
+from django.contrib.auth.models import User
+from catalog.models import Book
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
-# Сущности, связанные с персоналом и клиентами 
-
-# Сотрудники магазина
 class Employee(models.Model):
-    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
+    """Сотрудники книжного магазина"""
     first_name = models.CharField(max_length=100, verbose_name="Имя")
-    patronymic = models.CharField(max_length=100, blank=True, null=True, verbose_name="Отчество")
+    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
+    middle_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Отчество")
+    position = models.CharField(max_length=100, verbose_name="Должность")
     salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Зарплата")
-    experience = models.IntegerField(verbose_name="Стаж (лет)")
-    phone = models.CharField(max_length=20, verbose_name="Телефон")
-    position = models.CharField(max_length=50, verbose_name="Должность")
-    passport = models.CharField(max_length=12, unique=True, verbose_name="Паспорт (серия и номер)")
+    experience = models.IntegerField(verbose_name="Стаж (полных лет)")
+    phone = models.CharField(max_length=20, verbose_name="Контактный телефон")
+    passport = models.CharField(max_length=50, verbose_name="Паспортные данные")
     address = models.TextField(verbose_name="Адрес проживания")
+
+    def __str__(self):
+        return f"{self.last_name} — {self.position}"
 
     class Meta:
         verbose_name = "Сотрудник"
         verbose_name_plural = "Сотрудники"
 
-    def __str__(self):
-        return f'{self.last_name} ({self.position})'
-
-# Покупатели
 class Customer(models.Model):
-    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
+    """База покупателей (связана с пользователями сайта)"""
+    # Связываем с системным пользователем для входа на сайт
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='customer_profile')
     first_name = models.CharField(max_length=100, verbose_name="Имя")
-    patronymic = models.CharField(max_length=100, blank=True, null=True, verbose_name="Отчество")
+    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
+    middle_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Отчество")
     phone = models.CharField(max_length=20, verbose_name="Телефон")
+
+    def __str__(self):
+        return f"{self.last_name} {self.first_name}"
 
     class Meta:
         verbose_name = "Покупатель"
         verbose_name_plural = "Покупатели"
 
-    def __str__(self):
-        return f'{self.last_name} {self.first_name}'
+# Автоматическое создание профиля покупателя при регистрации нового пользователя
+@receiver(post_save, sender=User)
+def create_customer_profile(sender, instance, created, **kwargs):
+    if created:
+        # Пытаемся заполнить имя из данных User
+        Customer.objects.create(
+            user=instance, 
+            first_name=instance.first_name or instance.username,
+            last_name=instance.last_name or ""
+        )
 
-# Поставщики книг
-class Supplier(models.Model):
-    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
-    first_name = models.CharField(max_length=100, verbose_name="Имя")
-    patronymic = models.CharField(max_length=100, blank=True, null=True, verbose_name="Отчество")
-    phone = models.CharField(max_length=20, verbose_name="Телефон")
-
-    class Meta:
-        verbose_name = "Поставщик"
-        verbose_name_plural = "Поставщики"
-
-    def __str__(self):
-        return f'{self.last_name} {self.first_name}'
-
-# Основные операции (Продажи и Поступления)
-
-#Информация о продаже. Связь с сотрудником и покупателем
 class Sale(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, verbose_name="Сотрудник (Кассир)")
-    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, verbose_name="Покупатель")
-    sale_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время продажи")
-    
-    # M:N связь с Book через SalePosition
-    books = models.ManyToManyField(Book, through='SalePosition', verbose_name="Проданные книги")
-
-    class Meta:
-        verbose_name = "Продажа"
-        verbose_name_plural = "Продажи"
-
-    def __str__(self):
-        return f'Продажа №{self.id} от {self.sale_date.strftime("%Y-%m-%d")}'
-
-# Информация о поступлении товаров. Связь с поставщиком и издательством
-class Receipt(models.Model):
-    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, verbose_name="Поставщик")
-    publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True, verbose_name="Издательство")
-    receipt_date = models.DateField(auto_now_add=True, verbose_name="Дата поступления")
-
-    # M:N связь с Book через ReceiptPosition
-    books = models.ManyToManyField(Book, through='ReceiptPosition', verbose_name="Поступившие книги")
-
-    class Meta:
-        verbose_name = "Поступление"
-        verbose_name_plural = "Поступления"
+    """Заголовок чека (общая информация о продаже)"""
+    employee = models.ForeignKey(
+        Employee, 
+        on_delete=models.PROTECT, 
+        verbose_name="Продавец-консультант",
+        null=True, blank=True # Разрешаем null для онлайн-продаж без участия сотрудника
+    )
+    customer = models.ForeignKey(
+        Customer, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        verbose_name="Покупатель"
+    )
+    sale_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время транзакции")
+    total_amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0, 
+        verbose_name="Итоговая сумма чека"
+    )
 
     def __str__(self):
-        return f'Поступление №{self.id} от {self.receipt_date}'
-
-# Промежуточные M:N таблицы с дополнительными данными
-
-# Позиции_Продажи: Что, сколько и по какой цене было продано в рамках одной продажи.
-class SalePosition(models.Model):
-    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, verbose_name="Продажа")
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, verbose_name="Книга")
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена продажи (за ед.)")
-    quantity = models.IntegerField(verbose_name="Количество")
+        return f"Продажа №{self.id} от {self.sale_date.strftime('%d.%m.%Y %H:%M')}"
 
     class Meta:
-        # Составной уникальный ключ
-        unique_together = ('sale', 'book') 
-        verbose_name = "Позиция Продажи"
-        verbose_name_plural = "Позиции Продаж"
-    
-    def __str__(self):
-        return f'{self.book.title} x{self.quantity}'
+        verbose_name = "Продажа (Чек)"
+        verbose_name_plural = "Продажи (Чеки)"
 
-# Позиции_Поступления: Что, сколько и по какой закупочной цене поступило
-class ReceiptPosition(models.Model):
-    receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE, verbose_name="Поступление")
-    book = models.ForeignKey(Book, on_delete=models.CASCADE, verbose_name="Книга")
-    purchase_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Закупочная цена (за ед.)")
-    quantity = models.IntegerField(verbose_name="Количество")
+class SaleItem(models.Model):
+    """Позиции в чеке (конкретные книги в одной продаже)"""
+    sale = models.ForeignKey(
+        Sale, 
+        on_delete=models.CASCADE, 
+        related_name='items', 
+        verbose_name="Номер чека"
+    )
+    book = models.ForeignKey(
+        Book, 
+        on_delete=models.PROTECT, 
+        verbose_name="Проданная книга"
+    )
+    quantity = models.PositiveIntegerField(default=1, verbose_name="Количество (шт)")
+    price_at_sale = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        verbose_name="Цена за ед. на момент продажи"
+    )
+
+    def save(self, *args, **kwargs):
+        # ГЛАВНАЯ ЛОГИКА: Списание со склада при сохранении позиции чека
+        if not self.pk: # Только для новых записей
+            if self.book.stock >= self.quantity:
+                self.book.stock -= self.quantity
+                self.book.save()
+                
+                # Авто-заполнение цены, если не указана
+                if not self.price_at_sale:
+                    self.price_at_sale = self.book.price
+            else:
+                raise ValueError(f"Недостаточно товара '{self.book.title}' (в наличии: {self.book.stock})")
+        
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.book.title} (x{self.quantity})"
 
     class Meta:
-        # Составной уникальный ключ
-        unique_together = ('receipt', 'book')
-        verbose_name = "Позиция Поступления"
-        verbose_name_plural = "Позиции Поступлений"
-
-    def __str__(self):
-        return f'{self.book.title} x{self.quantity} (Закупка)'
+        verbose_name = "Позиция чека"
+        verbose_name_plural = "Позиции чеков"
